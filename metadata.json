@@ -1,0 +1,8 @@
+{
+  "name": "Pulse K12",
+  "description": "Enterprise-grade clinic management system for K-12 school nurses. Features modular architecture, mobile-first design, and AI-powered clinical assistance.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
