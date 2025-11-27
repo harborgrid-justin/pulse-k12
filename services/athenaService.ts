@@ -35,45 +35,53 @@ export interface FHIRImmunization {
   };
 }
 
-// Mock database of CVX codes for the "Auto-selection" / Search feature
-// In a real app, this would query a Terminology Service or Athena's ValueSet API.
-const VACCINE_CVX_CODES = [
-  { code: '03', display: 'MMR', system: 'http://hl7.org/fhir/sid/cvx' },
-  { code: '94', display: 'MMR-V', system: 'http://hl7.org/fhir/sid/cvx' },
-  { code: '115', display: 'Tdap', system: 'http://hl7.org/fhir/sid/cvx' },
-  { code: '09', display: 'Td (adult)', system: 'http://hl7.org/fhir/sid/cvx' },
-  { code: '20', display: 'DTaP', system: 'http://hl7.org/fhir/sid/cvx' },
-  { code: '21', display: 'Varicella', system: 'http://hl7.org/fhir/sid/cvx' },
-  { code: '140', display: 'Influenza, seasonal, injectable', system: 'http://hl7.org/fhir/sid/cvx' },
-  { code: '141', display: 'Influenza, seasonal, injectable', system: 'http://hl7.org/fhir/sid/cvx' },
-  { code: '208', display: 'Pfizer COVID-19 Vaccine', system: 'http://hl7.org/fhir/sid/cvx' },
-  { code: '207', display: 'Moderna COVID-19 Vaccine', system: 'http://hl7.org/fhir/sid/cvx' },
-  { code: '83', display: 'Hepatitis A', system: 'http://hl7.org/fhir/sid/cvx' },
-  { code: '08', display: 'Hepatitis B', system: 'http://hl7.org/fhir/sid/cvx' },
-  { code: '10', display: 'IPV (Polio)', system: 'http://hl7.org/fhir/sid/cvx' },
-];
+export interface ImmunizationInput {
+    name: string;
+    date: string;
+    doseNumber: number;
+    cvxCode?: string;
+    lotNumber?: string;
+    manufacturer?: string;
+    site?: string;
+}
 
 export const AthenaService = {
   /**
-   * Simulates searching Athena/Standard vocabulary for vaccines (CVX)
+   * Searches NLM Clinical Tables API for Vaccines (CVX)
+   * Public Endpoint: https://clinicaltables.nlm.nih.gov/api/vaccines/v3/search
    */
   searchVaccines: async (query: string) => {
-    // Simulate API latency
-    await new Promise(resolve => setTimeout(resolve, 300));
+    if (!query || query.length < 2) return [];
     
-    if (!query) return [];
-    
-    const lowerQuery = query.toLowerCase();
-    return VACCINE_CVX_CODES.filter(v => 
-      v.display.toLowerCase().includes(lowerQuery) || 
-      v.code.includes(lowerQuery)
-    );
+    try {
+      // Fetch from NLM Public API
+      const response = await fetch(`https://clinicaltables.nlm.nih.gov/api/vaccines/v3/search?terms=${encodeURIComponent(query)}&maxList=10`);
+      
+      if (!response.ok) throw new Error('Network response was not ok');
+      
+      const data = await response.json();
+      // API returns [count, codes, null, [[display, code, status], ...]]
+      // We want the 4th element (index 3) which is the array of results
+      const results = data[3];
+
+      if (!Array.isArray(results)) return [];
+
+      return results.map((item: any) => ({
+        display: item[0], // Vaccine Name
+        code: item[1],    // CVX Code
+        system: 'http://hl7.org/fhir/sid/cvx'
+      }));
+
+    } catch (error) {
+      console.error("NLM Vaccine Search Error", error);
+      return [];
+    }
   },
 
   /**
    * Saves an immunization record to the Athena FHIR API
    */
-  createImmunization: async (studentId: string, data: any): Promise<boolean> => {
+  createImmunization: async (studentId: string, data: ImmunizationInput): Promise<boolean> => {
     console.log("Saving to AthenaHealth FHIR API...");
 
     // 1. Construct FHIR R4 Resource
@@ -111,20 +119,6 @@ export const AthenaService = {
     console.log("FHIR Payload:", JSON.stringify(fhirResource, null, 2));
 
     try {
-      // 2. In a real environment, this would be the fetch call:
-      /*
-      const response = await fetch('https://api.athenahealth.com/preview1/fhir/r4/Immunization', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.ATHENA_TOKEN}`,
-          'Content-Type': 'application/fhir+json'
-        },
-        body: JSON.stringify(fhirResource)
-      });
-      if (!response.ok) throw new Error('FHIR Submit Failed');
-      return true;
-      */
-
       // Simulate successful API call
       await new Promise(resolve => setTimeout(resolve, 800));
       return true;

@@ -1,0 +1,15 @@
+
+export enum Urgency {
+  LOW = 'LOW',
+  MEDIUM = 'MEDIUM',
+  HIGH = 'HIGH',
+  CRITICAL = 'CRITICAL'
+}
+
+export enum FollowUpStatus {
+  PENDING = 'PENDING',
+  IN_PROGRESS = 'IN_PROGRESS',
+  COMPLETED = 'COMPLETED',
+  OVERDUE = 'OVERDUE',
+  NO_ACTION_NEEDED = 'NO_ACTION_NEEDED'
+}

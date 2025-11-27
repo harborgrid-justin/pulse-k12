@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { Urgency, VisitAnalysis } from "../types";
 
@@ -59,6 +60,61 @@ export const GeminiService = {
         formattedNote: rawText,
         urgency: Urgency.LOW,
       };
+    }
+  },
+
+  /**
+   * OCR Extraction for Immunization Records
+   */
+  extractImmunizationFromImage: async (base64Image: string): Promise<any> => {
+    try {
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: [
+          {
+            inlineData: {
+              mimeType: 'image/jpeg', // Assuming JPEG for simplicity, usually dynamic
+              data: base64Image
+            }
+          },
+          {
+            text: `Analyze this immunization record document. Extract the vaccination entries.
+            Return a JSON object with a list of vaccines.
+            For each vaccine, I need:
+            - name (e.g. MMR, DTaP, Varicella)
+            - date (YYYY-MM-DD format)
+            - manufacturer (if visible)
+            - lotNumber (if visible)
+            
+            Ignore non-vaccine text.`
+          }
+        ],
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              vaccines: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    name: { type: Type.STRING },
+                    date: { type: Type.STRING },
+                    manufacturer: { type: Type.STRING },
+                    lotNumber: { type: Type.STRING }
+                  }
+                }
+              }
+            }
+          }
+        }
+      });
+
+      return JSON.parse(response.text || '{ "vaccines": [] }');
+    } catch (error) {
+      console.error("Gemini OCR Error:", error);
+      return { vaccines: [] };
     }
   },
 

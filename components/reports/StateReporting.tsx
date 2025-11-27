@@ -42,7 +42,7 @@ export const StateReporting: React.FC<StateReportingProps> = ({ school }) => {
          <button 
            onClick={handleGenerate}
            disabled={loading}
-           className="bg-primary-600 hover:bg-primary-700 text-white px-6 py-3 rounded-lg font-medium shadow-sm flex items-center disabled:opacity-70 transition-all"
+           className="bg-primary-600 hover:bg-primary-700 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm flex items-center disabled:opacity-70 transition-all"
          >
            {loading ? <Loader2 className="animate-spin mr-2" /> : <FileText className="mr-2" />}
            {loading ? 'Generating Report...' : 'Generate Compliance Narrative'}
